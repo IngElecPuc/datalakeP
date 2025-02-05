@@ -1,0 +1,20 @@
+Region: us-west-2
+
+S3:
+  bucket: ingds-datalakep
+
+Redshift:
+  db_name: .
+  user: dlp_admin
+  password: SecretsManagerPassword
+  arn: arn:aws:redshift:us-west-2:076942521279:namespace:05abaaa4-f6c0-495a-9969-be751f09aa83
+  port: .
+
+IAM:
+  role: .
+
+SecretsManager:
+  secret_name: datalakep
+
+Tags:
+  Proyecto: datalakep
