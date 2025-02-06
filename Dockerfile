@@ -1,4 +1,4 @@
-FROM alpine:3.21.2
+FROM python:3.13.1-alpine3.21
 RUN addgroup appadmin && adduser -S -G appadmin appadmin
 USER appadmin
 WORKDIR /app/
