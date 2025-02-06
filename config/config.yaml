@@ -4,14 +4,13 @@ S3:
   bucket: ingds-datalakep
 
 Redshift:
-  db_name: .
+  name: redshift-datalakep-cluster
+  db_name: transcripted
   user: dlp_admin
-  password: SecretsManagerPassword
-  arn: arn:aws:redshift:us-west-2:076942521279:namespace:05abaaa4-f6c0-495a-9969-be751f09aa83
-  port: .
-
-IAM:
-  role: .
+  password: axUMOgZgOfOsY7J4yHfO
+  arn: arn:aws:redshift:us-west-2:076942521279:namespace:13b5ddc9-2891-4182-a2b4-327e13dc5aef
+  port: 5439
+  iam_role: arn:aws:iam::076942521279:role:/RedshiftS3AccessRole
 
 SecretsManager:
   secret_name: datalakep
