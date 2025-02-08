@@ -1,2 +1,4 @@
 venv/
 openpyxl-layer/
+DatalakepMaquinas.pem
+titanic_dataset/
