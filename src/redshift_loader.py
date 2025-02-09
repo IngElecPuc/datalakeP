@@ -1,11 +1,11 @@
+import yaml
 import boto3
 from botocore.exceptions import ClientError
 
-
-def get_secret():
-
-    secret_name = "datalakep"
-    region_name = "us-west-2"
+def get_secret(secret_name, region_name):
+    """
+    AWS base script for secret return
+    """
 
     # Create a Secrets Manager client
     session = boto3.session.Session()
@@ -25,4 +25,29 @@ def get_secret():
 
     secret = get_secret_value_response['SecretString']
 
-    # Your code goes here.
+    return secret
+
+def get_config_params():
+    """
+    Load the configuration files in a single dictionary
+    """
+    with open('config/config.yaml', 'r') as file: 
+        config = yaml.safe_load(file)
+
+    # Redshift configuration parameters
+    host = config['Redshift']['endpoint']
+    port = config['Redshift']['port']
+    dbname = config['Redshift']['db_name']
+    user = config['Redshift']['user']
+    if config['Redshift']['password'] != 'SecretsManager':
+        password = config['Redshift']['password']
+    else:
+        password = get_secret(config['SecretsManager']['secret_name'], config['Region'])
+
+    return {
+        'host': host,
+        'port': port,
+        'dbname': dbname,
+        'user': user,
+        'password': password
+    }
