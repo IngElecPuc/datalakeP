@@ -124,9 +124,56 @@ def ensure_required_tables(config_params: Dict[str, Union[str, int]]) -> None:
         
     except Exception as error:
         logger.error("Error connecting to Redshift: %s", error)
+        raise error
         
-    finally:
-        if 'cursor' in locals(): #Close cursor
-            cursor.close()
-        if 'connection' in locals(): #Close connection
-            connection.close()
+
+def copy_data_from_s3_to_redshift(config_params: Dict[str, Union[str, int]], 
+                                  s3_path: str, 
+                                  target_table: str, 
+                                  iam_role: str
+                                  ) -> None:
+    """
+    Copy data from an S3 bucket to a Redshift table using the COPY command.
+
+    Parameters:
+        config_params (dict[str, Union[str, int]]): A dictionary containing Redshift connection parameters:
+            - 'dbname': The database name.
+            - 'user': The username.
+            - 'password': The password.
+            - 'host': The Redshift cluster endpoint.
+            - 'port': The port number.
+        s3_path (str): The full S3 path to the file, e.g., 's3://bucket_name/file.csv'.
+        target_table (str): The name of the destination table in Redshift.
+        iam_role (str): The ARN of the IAM role that grants access to S3.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: If an error occurs during the data copy process.
+    """
+
+    copy_command = f"""
+        COPY {target_table}
+        FROM '{s3_path}'
+        IAM_ROLE '{iam_role}'
+        CSV
+        IGNOREHEADER 1;
+    """
+    
+    try:
+        with psycopg2.connect(
+            host=config_params['host'],
+            port=config_params['port'],
+            dbname=config_params['dbname'],
+            user=config_params['user'],
+            password=config_params['password']
+        ) as connection:
+            with connection.cursor() as cursor:
+
+                cursor.execute(copy_command)
+                connection.commit()
+
+    except Exception as error:
+        logger.error("Error loading data to Redshift: %s", error)
+        raise error

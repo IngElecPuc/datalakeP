@@ -3,6 +3,11 @@ Region: us-west-2
 S3:
   bucket: ingds-datalakep
 
+SQS:
+  url: https://sqs.us-west-2.amazonaws.com/076942521279/datalakep-queue
+  waittime: 20
+  maxmessages: 10
+
 Redshift:
   name: redshift-datalakep-cluster
   db_name: transcripted
