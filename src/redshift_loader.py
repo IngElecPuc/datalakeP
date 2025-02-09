@@ -1,8 +1,12 @@
 import yaml
 import boto3
 import psycopg2
+import logging
+from sql_queries import QUERY_TABLE_NAMES, CREATE_GENDER_SUBMISSION, CREATE_TRAIN_TEST_DATA
 from botocore.exceptions import ClientError
 from typing import Dict, Union
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def get_secret(secret_name: str, region_name: str) -> str:
     """
@@ -30,10 +34,11 @@ def get_secret(secret_name: str, region_name: str) -> str:
         get_secret_value_response = client.get_secret_value(
             SecretId=secret_name
         )
-    except ClientError as e:
+    except ClientError as error:
+        logger.error("Error connecting to Secrets Manager: %s", error)
         # For a list of exceptions thrown, see
         # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-        raise e
+        raise error
 
     secret = get_secret_value_response['SecretString']
 
@@ -91,68 +96,34 @@ def ensure_required_tables(config_params: Dict[str, Union[str, int]]) -> None:
 
     try:
         # Establish connection to Redshift
-        connection = psycopg2.connect(
+        with psycopg2.connect(
             host=config_params['host'],
             port=config_params['port'],
             dbname=config_params['dbname'],
             user=config_params['user'],
             password=config_params['password']
-        )
-        cursor = connection.cursor()
-        
-        # Query available tables, excluding internal schemes
-        query_table_names = """
-        SELECT schemaname, tablename
-        FROM pg_catalog.pg_tables
-        WHERE schemaname NOT IN ('pg_catalog', 'information_schema');
-        """
+        ) as connection:
+            with connection.cursor() as cursor:
 
-        create_gender_submission = """
-        CREATE TABLE gender_submission(
-        id INTEGER IDENTITY(1,1),
-        PassengerId INTEGER NOT NULL,
-        Survived BOOLEAN NOT NULL
-        ) DISTSTYLE AUTO;
-        """
+                table_queries = {
+                    'gender_submission': CREATE_GENDER_SUBMISSION, 
+                    'train_test_data': CREATE_TRAIN_TEST_DATA
+                }
+                
+                cursor.execute(QUERY_TABLE_NAMES)
+                tables = cursor.fetchall() #Obtain all tables and schemes
+                redshift_tables  = []
+                
+                for _, tablename in tables:
+                    redshift_tables.append(tablename)
 
-        create_train_test_data = """
-        CREATE TABLE train_test_data(
-        id INTEGER IDENTITY(1,1),
-        PassengerId INTEGER NOT NULL,
-        Survived BOOLEAN NOT NULL,
-        Pclass INTEGER NOT NULL,
-        [Name] VARCHAR(100) NOT NULL,
-        Sex	VARCHAR(6) NOT NULL,
-        [Age] Decimal(4,2) NULL,
-        SibSp INTEGER NOT NULL,	
-        Parch INTEGER NOT NULL,
-        Ticket VARCHAR(20) NOT NULL,
-        Fare REAL NOT NULL,
-        Cabin VARCHAR(15) NULL,
-        Embarked CHAR(1) NULL,
-        ForTrain BOOLEAN NOT NULL
-        ) DISTSTYLE AUTO;
-        """
-
-        table_querys = {
-            'gender_submission': create_gender_submission, 
-            'train_test_data': create_train_test_data
-        }
-        
-        cursor.execute(query_table_names)
-        tables = cursor.fetchall() #Obtain all tables and schemes
-        redshift_tables  = []
-        
-        for _, tablename in tables:
-            redshift_tables.append(tablename)
-
-        for table in table_querys.keys():
-            if table not in redshift_tables :
-                cursor.execute(table_querys[table])
-                connection.commit()
+                for table in table_queries.keys():
+                    if table not in redshift_tables :
+                        cursor.execute(table_queries[table])
+                        connection.commit()
         
     except Exception as error:
-        print("Error al conectar o consultar en Redshift:", error)
+        logger.error("Error connecting to Redshift: %s", error)
         
     finally:
         if 'cursor' in locals(): #Close cursor
