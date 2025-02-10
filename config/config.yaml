@@ -15,7 +15,7 @@ Redshift:
   password: axUMOgZgOfOsY7J4yHfO
   arn: arn:aws:redshift:us-west-2:076942521279:namespace:34ecd63c-dc87-483f-8bcc-c7e5b3144d75
   port: 5439
-  iam_role: arn:aws:iam::076942521279:role:/RedshiftS3AccessRole
+  iam_role: arn:aws:iam::076942521279:role/Redshift-datalakep
   endpoint: redshift-datalakep-cluster-exposed.chqburshgayp.us-west-2.redshift.amazonaws.com
 
 SecretsManager:

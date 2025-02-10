@@ -34,7 +34,7 @@ def load_file(bucket: str, key: str) -> Tuple[bool, Optional[pd.DataFrame]]:
         response = s3.get_object(Bucket=bucket, Key=key)
         file_content = response['Body'].read()
         excel_io = BytesIO(file_content)
-        df = pd.read_excel(excel_io)
+        df = pd.read_excel(excel_io, engine='openpyxl')
         return True, df
     else:
         return False, None
@@ -101,6 +101,5 @@ def check_columns(
     for column in df.columns:
         in_expected = column.lower() in col_names
         check = check and in_expected
-        logger.info(f"{column} in {col_names}: {in_expected}")
     
     return check

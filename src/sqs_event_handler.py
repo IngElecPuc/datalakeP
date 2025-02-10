@@ -24,8 +24,8 @@ def get_sqs_config_params() -> Dict[str, Union[str, int]]:
     return {
         'region': config['Region'],
         'queue_url': config['SQS']['url'],
-        'waittime': config['SQS']['url'],
-        'maxmessages': config['SQS']['url']
+        'waittime': config['SQS']['waittime'],
+        'maxmessages': config['SQS']['maxmessages']
     }
 
 config_params = get_sqs_config_params()
