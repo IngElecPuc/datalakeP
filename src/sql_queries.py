@@ -33,3 +33,11 @@ CREATE TABLE train_test_data(
     ForTrain BOOLEAN NOT NULL
 ) DISTSTYLE AUTO;
 """
+
+QUERY_COL_NAMES = """
+SELECT column_name
+FROM information_schema.columns
+WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+AND table_name = 'X'
+ORDER BY table_schema, table_name, ordinal_position;
+"""

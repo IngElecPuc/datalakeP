@@ -2,9 +2,9 @@ import yaml
 import boto3
 import psycopg2
 import logging
-from sql_queries import QUERY_TABLE_NAMES, CREATE_GENDER_SUBMISSION, CREATE_TRAIN_TEST_DATA
+from sql_queries import QUERY_TABLE_NAMES, CREATE_GENDER_SUBMISSION, CREATE_TRAIN_TEST_DATA, QUERY_COL_NAMES
 from botocore.exceptions import ClientError
-from typing import Dict, Union
+from typing import Dict, Union, List
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -177,3 +177,46 @@ def copy_data_from_s3_to_redshift(config_params: Dict[str, Union[str, int]],
     except Exception as error:
         logger.error("Error loading data to Redshift: %s", error)
         raise error
+
+def query_col_names(config_params: Dict[str, Union[str, int]], table_name: str) -> List[str]:
+    """
+    Retrieve the column names for a given table from Redshift.
+
+    Parameters:
+        config_params (dict[str, Union[str, int]]): A dictionary containing Redshift connection parameters:
+            - host (str): The Redshift cluster endpoint.
+            - port (int): The port number.
+            - dbname (str): The database name.
+            - user (str): The username.
+            - password (str): The password.
+        table_name (str): The name of the table to query column names for.
+
+    Returns:
+        List[str]: A list of column names for the specified table.
+
+    Raises:
+        Exception: If an error occurs during the query.
+    """
+
+    query = QUERY_COL_NAMES.replace('X', table_name)
+    columns = []
+    
+    try:
+        with psycopg2.connect(
+            host=config_params['host'],
+            port=config_params['port'],
+            dbname=config_params['dbname'],
+            user=config_params['user'],
+            password=config_params['password']
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                response = cursor.fetchall()
+                for record in response:
+                    columns.append(record[0])
+                    
+    except Exception as error:
+        logger.error("Error retrieving column names from Redshift: %s", error)
+        raise error
+
+    return columns
