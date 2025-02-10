@@ -78,6 +78,50 @@ def get_rs_config_params() -> Dict[str, Union[str, int]]:
         'password': password
     }
 
+def retrieve_table_names(config_params: Dict[str, Union[str, int]]) -> List[str]:
+    """
+    Connect to the Redshift database, check for existing tables, and retrieve their names.
+
+    Parameters:
+        config_params (dict[str, Union[str, int]]): A dictionary containing Redshift connection parameters:
+            - host: The Redshift cluster endpoint.
+            - port: The port number.
+            - dbname: The database name.
+            - user: The username.
+            - password: The password.
+
+    Returns:
+        None
+    Raises:
+        Exception: If an error while trying to retrieve table names.  
+    """
+    redshift_tables  = []
+
+    try:
+        # Establish connection to Redshift
+        with psycopg2.connect(
+            host=config_params['host'],
+            port=config_params['port'],
+            dbname=config_params['dbname'],
+            user=config_params['user'],
+            password=config_params['password']
+        ) as connection:
+            with connection.cursor() as cursor:
+
+                cursor.execute(QUERY_TABLE_NAMES)
+                tables = cursor.fetchall() #Obtain all tables and schemes
+                
+                for _, tablename in tables:
+                    redshift_tables.append(tablename)
+
+            
+    except Exception as error:
+        logger.error("Error connecting to Redshift: %s", error)
+        raise error
+    
+    return redshift_tables
+                    
+
 def ensure_required_tables(config_params: Dict[str, Union[str, int]]) -> None:
     """
     Connect to the Redshift database, check for existing tables, and create necessary tables if missing.
@@ -92,6 +136,9 @@ def ensure_required_tables(config_params: Dict[str, Union[str, int]]) -> None:
 
     Returns:
         None
+
+    Raises:
+        Exception: If an error while trying to connect to Redshift.        
     """
 
     try:
@@ -214,7 +261,7 @@ def query_col_names(config_params: Dict[str, Union[str, int]], table_name: str) 
                 response = cursor.fetchall()
                 for record in response:
                     columns.append(record[0])
-                    
+
     except Exception as error:
         logger.error("Error retrieving column names from Redshift: %s", error)
         raise error

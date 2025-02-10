@@ -1,6 +1,9 @@
 from redshift_loader import get_rs_config_params, ensure_required_tables, copy_data_from_s3_to_redshift
 from sqs_event_handler import get_sqs_config_params, get_files_data
-from s3_preproc import check_file
+from s3_preproc import load_file, check_columns
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def main():
 
@@ -16,6 +19,16 @@ def main():
         founded, files = get_files_data(sqs_config) #Served a message retrieve key and value from the S3 event
         if not founded:
             continue
+
+        for s3_path, filename in files:
+            targetfile, df = load_file(s3_path, filename)
+            if targetfile:
+                if check_columns(redshift_config, df, filename):
+                    logger.info(f'File {filename} from bucket {s3_path} is a valid file')
+            else:
+                logger.info(f'File {filename} detected, but not compatible')
+
+        pass
         extension = filename.split('.')[1]
         #Verificar si corresponde con un archivo excel
         if extension == 'xlsx' or extension == 'xls' or extension == 'csv':
@@ -25,7 +38,6 @@ def main():
             #Cargar archivo
             copy_data_from_s3_to_redshift(redshift_config, s3_path, ..., filename) #Extender configuración de get_rs_config_params para sacar todo lo necesario
 
-        pass
 
 if __name__ == '__main__':
     main()
