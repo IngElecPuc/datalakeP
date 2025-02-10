@@ -1,9 +1,10 @@
 import boto3
 import json
-import time
 import yaml
-import logger
-from typing import Dict, Union
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+from typing import Dict, Union, Tuple, List
 
 def get_sqs_config_params() -> Dict[str, Union[str, int]]:
     """
@@ -12,7 +13,7 @@ def get_sqs_config_params() -> Dict[str, Union[str, int]]:
     Returns:
         dict: A dictionary with SQS connection parameters:
             - region (str): The SQS region.
-            - url (str): The SQS URL.
+            - queue_url (str): The SQS URL.
             - waittime (int): The port number.
             - maxmessages (int): The database name.
     """
@@ -28,52 +29,55 @@ def get_sqs_config_params() -> Dict[str, Union[str, int]]:
     }
 
 config_params = get_sqs_config_params()
-sqs = boto3.client('sqs', region_name=config_params['Region'])  
+sqs = boto3.client('sqs', region_name=config_params['region'])  
 
-def process_message(message):
-    
-    body = json.loads(message['Body']) # S3 messages comes in JSON format
-    
-    records = body.get('Records', [])
-    for record in records:
-        bucket = record['s3']['bucket']['name']
-        key = record['s3']['object']['key']
-        print(f"Nuevo archivo en S3: Bucket={bucket}, Key={key}")
-        # TODO Aquí puedes invocar el proceso que lee el archivo, lo procesa, etc.
+def get_files_data(config_params: Dict[str, Union[str, int]]) -> Tuple[bool, List[Tuple[str, str]]]:
+    """
+    Retrieve S3 bucket and filename information from SQS messages if available.
 
-def poll_messages():
+    Parameters:
+        config_params (dict[str, Union[str, int]]): A dictionary containing SQS queue parameters:
+            - region (str): The SQS region.
+            - queue_url (str): The SQS URL.
+            - waittime (int): The wait time in seconds for long polling.
+            - maxmessages (int): The maximum number of messages to retrieve.
+    
+    Returns:
+        Tuple[bool, List[Tuple[str, str]]]:
+            - bool: Flag indicating whether any messages were found.
+            - list: A list of tuples, each containing (S3 bucket name, filename) for each received message.
     """
-    Por ahora en formato de loop infinito antes de debuguear
-    """
-    while True:
-        # Long polling para obtener mensajes (espera hasta 20 segundos)
-        response = sqs.receive_message(
+    
+    new_files = []
+    response = sqs.receive_message(
             QueueUrl=config_params['queue_url'],
-            MaxNumberOfMessages=10,
-            WaitTimeSeconds=20
+            MaxNumberOfMessages=config_params['maxmessages'],
+            WaitTimeSeconds=config_params['waittime']
         )
+    messages = response.get('Messages', [])
+    if not messages:
+        return False, new_files #This is meant for a signal in the main loop -> no response, continue
+    
+    for message in messages:
+        try:
+            body = json.loads(message['Body']) # S3 messages comes in JSON format
+            records = body.get('Records', [])
+            for record in records:
+                bucket = record['s3']['bucket']['name']
+                key = record['s3']['object']['key']
+                new_files.append((bucket, key))
 
-        messages = response.get('Messages', [])
-        if not messages:
-            print("No se encontraron mensajes, esperando...")
-            continue
-        
-        print(messages)
-        
-        for message in messages:
-            try:
-                process_message(message)
-                sqs.delete_message(
-                    QueueUrl=config_params['queue_url'],
-                    ReceiptHandle=message['ReceiptHandle']
-                ) #Once proccesed the messega must be eliminated from the queue
+            sqs.delete_message(
+                QueueUrl=config_params['queue_url'],
+                ReceiptHandle=message['ReceiptHandle']
+            ) #Once proccesed the messega must be eliminated from the queue
 
-            except Exception as error:
-                logger.error("Error reading from SQS: %s", error)
-                raise error
-        time.sleep(1)
+        except Exception as error:
+            logger.error("Error reading from SQS: %s", error)
+            raise error
+    return True, new_files
 
-def delete_unhandeled_messages(receipt_handle: str) -> None:
+def delete_unhandled_messages(receipt_handle: str) -> None:
     """
     Erases rogue messages from the queue.
 

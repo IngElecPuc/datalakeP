@@ -1,5 +1,5 @@
 from redshift_loader import get_rs_config_params, ensure_required_tables, copy_data_from_s3_to_redshift
-from sqs_event_handler import get_sqs_config_params, get_file_data
+from sqs_event_handler import get_sqs_config_params, get_files_data
 from s3_preproc import check_file
 
 def main():
@@ -8,14 +8,14 @@ def main():
     redshift_config = get_rs_config_params()
     sqs_config = get_sqs_config_params()
     
-    ensure_required_tables(redshift_config) #Verificar si existen las tablas e inicializarlas si no
+    ensure_required_tables(redshift_config) #Check if the tables exist and initialize them if not
 
-    #Loop para escuchar mensajes
+    #Loop to listen to messages
     while True:
 
-        #Atendido un mensaje recuperar key y value del evento de S3
-        #Borrar mensaje
-        s3_path, filename = get_file_data(sqs_config)
+        founded, files = get_files_data(sqs_config) #Served a message retrieve key and value from the S3 event
+        if not founded:
+            continue
         extension = filename.split('.')[1]
         #Verificar si corresponde con un archivo excel
         if extension == 'xlsx' or extension == 'xls' or extension == 'csv':
