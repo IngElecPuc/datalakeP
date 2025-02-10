@@ -55,6 +55,7 @@ def get_rs_config_params() -> Dict[str, Union[str, int]]:
             - dbname (str): The database name.
             - user (str): The username.
             - password (str): The password retrieved from the config file or Secrets Manager.
+            - iam_role (str): The ARN from the IAM Role used to copy data to the cluster
     """
 
     with open('config/config.yaml', 'r') as file: 
@@ -69,13 +70,15 @@ def get_rs_config_params() -> Dict[str, Union[str, int]]:
         password = config['Redshift']['password']
     else:
         password = get_secret(config['SecretsManager']['secret_name'], config['Region'])
+    iam_role = config['Redshift']['iam_role']
 
     return {
         'host': host,
         'port': port,
         'dbname': dbname,
         'user': user,
-        'password': password
+        'password': password,
+        'iam_role': iam_role
     }
 
 def retrieve_table_names(config_params: Dict[str, Union[str, int]]) -> List[str]:
@@ -89,6 +92,7 @@ def retrieve_table_names(config_params: Dict[str, Union[str, int]]) -> List[str]
             - dbname: The database name.
             - user: The username.
             - password: The password.
+            - iam_role: The necessary permisions
 
     Returns:
         None
@@ -133,6 +137,7 @@ def ensure_required_tables(config_params: Dict[str, Union[str, int]]) -> None:
             - dbname: The database name.
             - user: The username.
             - password: The password.
+            - iam_role: The necessary permisions
 
     Returns:
         None
@@ -177,21 +182,20 @@ def ensure_required_tables(config_params: Dict[str, Union[str, int]]) -> None:
 def copy_data_from_s3_to_redshift(config_params: Dict[str, Union[str, int]], 
                                   s3_path: str, 
                                   target_table: str, 
-                                  iam_role: str
                                   ) -> None:
     """
     Copy data from an S3 bucket to a Redshift table using the COPY command.
 
     Parameters:
         config_params (dict[str, Union[str, int]]): A dictionary containing Redshift connection parameters:
-            - 'dbname': The database name.
-            - 'user': The username.
-            - 'password': The password.
-            - 'host': The Redshift cluster endpoint.
-            - 'port': The port number.
+            - dbname (str): The database name.
+            - user (str): The username.
+            - password (str): The password.
+            - host (str): The Redshift cluster endpoint.
+            - port (int): The port number.
+            - iam_role (str): The ARN of the IAM role that grants access to S3.
         s3_path (str): The full S3 path to the file, e.g., 's3://bucket_name/file.csv'.
         target_table (str): The name of the destination table in Redshift.
-        iam_role (str): The ARN of the IAM role that grants access to S3.
 
     Returns:
         None
@@ -203,7 +207,7 @@ def copy_data_from_s3_to_redshift(config_params: Dict[str, Union[str, int]],
     copy_command = f"""
         COPY {target_table}
         FROM '{s3_path}'
-        IAM_ROLE '{iam_role}'
+        IAM_ROLE '{config_params['iam_role']}'
         CSV
         IGNOREHEADER 1;
     """
@@ -236,6 +240,7 @@ def query_col_names(config_params: Dict[str, Union[str, int]], table_name: str) 
             - dbname (str): The database name.
             - user (str): The username.
             - password (str): The password.
+            - iam_role (str): The necessary permisions
         table_name (str): The name of the table to query column names for.
 
     Returns:

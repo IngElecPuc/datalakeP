@@ -6,7 +6,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def main():
-
     
     redshift_config = get_rs_config_params()
     sqs_config = get_sqs_config_params()
