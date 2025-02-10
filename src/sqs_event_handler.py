@@ -5,7 +5,7 @@ import yaml
 import logger
 from typing import Dict, Union
 
-def get_config_params() -> Dict[str, Union[str, int]]:
+def get_sqs_config_params() -> Dict[str, Union[str, int]]:
     """
     Load configuration parameters from a YAML file.
 
@@ -27,7 +27,7 @@ def get_config_params() -> Dict[str, Union[str, int]]:
         'maxmessages': config['SQS']['url']
     }
 
-config_params = get_config_params()
+config_params = get_sqs_config_params()
 sqs = boto3.client('sqs', region_name=config_params['Region'])  
 
 def process_message(message):
@@ -69,11 +69,17 @@ def poll_messages():
                 ) #Once proccesed the messega must be eliminated from the queue
 
             except Exception as error:
-                logger.error("Error connecting to Redshift: %s", error)
+                logger.error("Error reading from SQS: %s", error)
                 raise error
         time.sleep(1)
 
-def delete_unhandeled_messages(receipt_handle):
+def delete_unhandeled_messages(receipt_handle: str) -> None:
+    """
+    Erases rogue messages from the queue.
+
+    Parameters:
+        receipt_handle (str): The message's handler
+    """
 
     # Set the visibility timeout to 0 to make the message visible again.
     sqs.change_message_visibility(

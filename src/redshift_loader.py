@@ -44,7 +44,7 @@ def get_secret(secret_name: str, region_name: str) -> str:
 
     return secret
 
-def get_config_params() -> Dict[str, Union[str, int]]:
+def get_rs_config_params() -> Dict[str, Union[str, int]]:
     """
     Load configuration parameters from a YAML file and AWS Secrets Manager if necessary.
 
