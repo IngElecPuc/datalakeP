@@ -19,7 +19,7 @@ CREATE_TRAIN_TEST_DATA = """
 CREATE TABLE train_test_data(
     id INTEGER IDENTITY(1,1),
     PassengerId INTEGER NOT NULL,
-    Survived BOOLEAN NOT NULL,
+    Survived BOOLEAN NULL,
     Pclass INTEGER NOT NULL,
     "Name" VARCHAR(100) NOT NULL,
     Sex VARCHAR(6) NOT NULL,

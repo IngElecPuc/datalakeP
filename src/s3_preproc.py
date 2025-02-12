@@ -79,6 +79,8 @@ def check_columns(
     This function retrieves the list of available table names from Redshift, determines 
     the appropriate table based on the filename, retrieves the expected column names for that table, 
     and then checks whether each column in the DataFrame (in lowercase) is present in the expected columns.
+    Survived is the target value for prediction, so it is not given for the test dataset, but the algorith
+    has to work anyway. 
 
     Parameters:
         rs_config (dict[str, Union[str, int]]): A dictionary containing Redshift connection parameters:
