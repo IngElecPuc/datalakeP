@@ -2,7 +2,7 @@
 import json
 import boto3
 import pandas as pd
-from io import BytesIO
+from io import BytesIO, StringIO
 import difflib
 from typing import List, Tuple, Optional, Dict, Union
 from redshift_loader import query_col_names, retrieve_table_names
@@ -33,8 +33,11 @@ def load_file(bucket: str, key: str) -> Tuple[bool, Optional[pd.DataFrame]]:
         key = key.replace('+', ' ')
         response = s3.get_object(Bucket=bucket, Key=key)
         file_content = response['Body'].read()
-        excel_io = BytesIO(file_content)
-        df = pd.read_excel(excel_io, engine='openpyxl')
+        file_io = BytesIO(file_content)
+        if extension == 'csv':
+            df = pd.read_csv(file_io)
+        else:
+            df = pd.read_excel(file_io, engine='openpyxl')
         return True, df
     else:
         return False, None
@@ -103,3 +106,41 @@ def check_columns(
         check = check and in_expected
     
     return check
+
+def save_dataframe_to_s3(df: pd.DataFrame, bucket: str, key: str) -> None:
+    """
+    Saves a pandas DataFrame to an S3 bucket as a CSV file.
+
+    Parameters:
+      - df: DataFrame to be saved.
+      - bucket: Name of the S3 bucket.
+      - key: Path and file name within the bucket (e.g., 'folder/data.csv').
+    """
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer)
+    csv_bytes = csv_buffer.getvalue().encode('utf-8')
+    s3.put_object(Bucket=bucket, Key=key, Body=csv_bytes)
+
+def format_for_table(df: pd.DataFrame, table_name: str, filename: str) -> pd.DataFrame:
+    """
+    Format Dataframe to fit target's table format. 
+
+    Parameters:
+      - df: DataFrame to be formated.
+      - table_name: Target table.
+    """
+    #pdb.set_trace()
+    base_name = filename.split('.')[0].lower()
+    candidates = ['train', 'test']
+    matches = difflib.get_close_matches(base_name, candidates, n=1, cutoff=0.8)
+    if not matches:
+        matches = None
+    else:
+        matches = matches[0]
+    
+    if table_name == 'gender_submission':
+        df['Survived'] = df['Survived'].map({0: 'false', 1: 'true'})
+    elif table_name == 'train_test_data':
+        df['ForTrain'] = matches == 'train'
+    
+    return df
