@@ -137,7 +137,7 @@ def format_for_table(df: pd.DataFrame, table_name: str, filename: str) -> pd.Dat
     else:
         matches = matches[0]
     
-    if table_name == 'gender_submission' or 'train':
+    if table_name == 'gender_submission' or table_name == 'train':
         df['Survived'] = df['Survived'].map({0: 'false', 1: 'true'})
     
     return df

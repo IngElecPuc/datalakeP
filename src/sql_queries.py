@@ -44,7 +44,7 @@ CREATE TABLE test_data(
     SibSp INTEGER NOT NULL,
     Parch INTEGER NOT NULL,
     Ticket VARCHAR(20) NOT NULL,
-    Fare REAL NOT NULL,
+    Fare REAL NULL,
     Cabin VARCHAR(15) NULL,
     Embarked CHAR(1) NULL
 ) DISTSTYLE AUTO;
