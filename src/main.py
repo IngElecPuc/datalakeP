@@ -21,7 +21,7 @@ def main():
             targetfile, df = load_file(bucket, key) #Load a pandas DataFrame for preprocessing if necessary
             if targetfile:
                 key = key.split('/')[1] #Expecting files from a special upload folder
-                if check_columns(redshift_config, df, key): #Chek if columns are compatible with kwon definition
+                if check_columns(redshift_config, df, key): #Check if columns are compatible with known definitions
                     all_tables = retrieve_table_names(redshift_config)
                     table_name = decide_table_for_file(key, all_tables)
                     key2 = f"Tmp/{key.split('.')[0]}-autogen.csv" #A Tmp folder is needed in the bucket 

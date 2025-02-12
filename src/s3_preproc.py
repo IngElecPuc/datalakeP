@@ -117,7 +117,7 @@ def save_dataframe_to_s3(df: pd.DataFrame, bucket: str, key: str) -> None:
       - key: Path and file name within the bucket (e.g., 'folder/data.csv').
     """
     csv_buffer = StringIO()
-    df.to_csv(csv_buffer)
+    df.to_csv(csv_buffer, index=False)
     csv_bytes = csv_buffer.getvalue().encode('utf-8')
     s3.put_object(Bucket=bucket, Key=key, Body=csv_bytes)
 
