@@ -2,7 +2,7 @@ import yaml
 import boto3
 import psycopg2
 import logging
-from sql_queries import QUERY_TABLE_NAMES, CREATE_GENDER_SUBMISSION, CREATE_TRAIN_TEST_DATA, QUERY_COL_NAMES
+from sql_queries import QUERY_TABLE_NAMES, CREATE_GENDER_SUBMISSION, CREATE_TRAIN_DATA, CREATE_TEST_DATA, QUERY_COL_NAMES
 from botocore.exceptions import ClientError
 from typing import Dict, Union, List
 logging.basicConfig(level=logging.INFO)
@@ -159,7 +159,8 @@ def ensure_required_tables(config_params: Dict[str, Union[str, int]]) -> None:
 
                 table_queries = {
                     'gender_submission': CREATE_GENDER_SUBMISSION, 
-                    'train_test_data': CREATE_TRAIN_TEST_DATA
+                    'train_data': CREATE_TRAIN_DATA,
+                    'test_data': CREATE_TEST_DATA
                 }
                 
                 cursor.execute(QUERY_TABLE_NAMES)

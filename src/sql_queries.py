@@ -15,11 +15,11 @@ CREATE TABLE gender_submission(
 ) DISTSTYLE AUTO;
 """
 
-CREATE_TRAIN_TEST_DATA = """
-CREATE TABLE train_test_data(
+CREATE_TRAIN_DATA = """
+CREATE TABLE train_data(
     id INTEGER IDENTITY(1,1),
     PassengerId INTEGER NOT NULL,
-    Survived BOOLEAN NULL,
+    Survived BOOLEAN NOT NULL,
     Pclass INTEGER NOT NULL,
     "Name" VARCHAR(100) NOT NULL,
     Sex VARCHAR(6) NOT NULL,
@@ -29,8 +29,24 @@ CREATE TABLE train_test_data(
     Ticket VARCHAR(20) NOT NULL,
     Fare REAL NOT NULL,
     Cabin VARCHAR(15) NULL,
-    Embarked CHAR(1) NULL,
-    ForTrain BOOLEAN NOT NULL
+    Embarked CHAR(1) NULL
+) DISTSTYLE AUTO;
+"""
+
+CREATE_TEST_DATA = """
+CREATE TABLE test_data(
+    id INTEGER IDENTITY(1,1),
+    PassengerId INTEGER NOT NULL,
+    Pclass INTEGER NOT NULL,
+    "Name" VARCHAR(100) NOT NULL,
+    Sex VARCHAR(6) NOT NULL,
+    "Age" DECIMAL(4,2) NULL,
+    SibSp INTEGER NOT NULL,
+    Parch INTEGER NOT NULL,
+    Ticket VARCHAR(20) NOT NULL,
+    Fare REAL NOT NULL,
+    Cabin VARCHAR(15) NULL,
+    Embarked CHAR(1) NULL
 ) DISTSTYLE AUTO;
 """
 

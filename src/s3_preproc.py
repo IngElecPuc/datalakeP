@@ -79,8 +79,6 @@ def check_columns(
     This function retrieves the list of available table names from Redshift, determines 
     the appropriate table based on the filename, retrieves the expected column names for that table, 
     and then checks whether each column in the DataFrame (in lowercase) is present in the expected columns.
-    Survived is the target value for prediction, so it is not given for the test dataset, but the algorith
-    has to work anyway. 
 
     Parameters:
         rs_config (dict[str, Union[str, int]]): A dictionary containing Redshift connection parameters:
@@ -131,7 +129,6 @@ def format_for_table(df: pd.DataFrame, table_name: str, filename: str) -> pd.Dat
       - df: DataFrame to be formated.
       - table_name: Target table.
     """
-    #pdb.set_trace()
     base_name = filename.split('.')[0].lower()
     candidates = ['train', 'test']
     matches = difflib.get_close_matches(base_name, candidates, n=1, cutoff=0.8)
@@ -140,9 +137,7 @@ def format_for_table(df: pd.DataFrame, table_name: str, filename: str) -> pd.Dat
     else:
         matches = matches[0]
     
-    if table_name == 'gender_submission':
+    if table_name == 'gender_submission' or 'train':
         df['Survived'] = df['Survived'].map({0: 'false', 1: 'true'})
-    elif table_name == 'train_test_data':
-        df['ForTrain'] = matches == 'train'
     
     return df
